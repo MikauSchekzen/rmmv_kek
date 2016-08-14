@@ -8,7 +8,7 @@ Fenrir.HelperFunctions = Fenrir.HelperFunctions || {};
  * @plugindesc An addon to Yanfly's Buffs and States addon, for people with some JavaScript knowledge
  * @author FenrirKnight
  *
- * @param ---Map related---
+ * @param --- Map related ---
  *
  * @param Unteleportable maps
  * @desc Maps that can't be teleported from. Separate map IDs with spaces.
@@ -17,6 +17,20 @@ Fenrir.HelperFunctions = Fenrir.HelperFunctions || {};
  * @param Overworld maps
  * @desc Maps that are considered overworld
  * @default 3
+ *
+ * @param --- Enemy Levels ---
+ *
+ * @param Min Level Var
+ * @desc
+ * The variable ID to determine minimum enemy level.
+ * When it is 0 it uses default rules.
+ * @default 21
+ *
+ * @param Max Level Var
+ * @desc
+ * The variable ID to determine maximum enemy level.
+ * When it is 0 it uses default rules.
+ * @default 22
  *
  *
  * @help
@@ -66,6 +80,10 @@ Fenrir.HelperFunctions.overworldMaps = [];
 Fenrir.HelperFunctions.parameters["Overworld maps"].split(" ").forEach(function(a) {
   Fenrir.HelperFunctions.overworldMaps.push(Number(a));
 });
+Fenrir.HelperFunctions.Levels = {
+  minLevelVar: Number(Fenrir.HelperFunctions.parameters["Min Level Var"]),
+  maxLevelVar:  Number(Fenrir.HelperFunctions.parameters["Max Level Var"])
+};
 
 
 //===================================================
@@ -348,3 +366,74 @@ Game_Map.prototype.isUnteleportable = function() {
 Game_Map.prototype.isOverworldMap = function() {
   return (Fenrir.HelperFunctions.overworldMaps.indexOf(this.mapId()) !== -1);
 };
+
+/**
+ * @class Game_Battler
+ */
+Game_Battler.prototype.turnEval = function(min, increment) {
+  if(increment === undefined) increment = 0;
+  var n = this._ctbTurn;
+  if(increment === 0 && n === min) return true;
+  else if(increment > 0 && n >= min && (n - min) % increment === 0) return true;
+  return false;
+}
+
+if(Imported.YEP_X_BattleSysCTB) {
+  Fenrir.HelperFunctions.Game_Battler_onCTBStart = Game_Battler.prototype.onCTBStart;
+  Game_Battler.prototype.onCTBStart = function() {
+    Fenrir.HelperFunctions.Game_Battler_onCTBStart.call(this);
+    this._ctbTurn = 0;
+  }
+
+  Fenrir.HelperFunctions.Game_Battler_endTurnAllCTB = Game_Battler.prototype.endTurnAllCTB;
+  Game_Battler.prototype.endTurnAllCTB = function() {
+    Fenrir.HelperFunctions.Game_Battler_endTurnAllCTB.call(this);
+    this._ctbTurn += 1;
+  }
+}
+
+if(Imported.YEP_EnemyLevels) {
+  Fenrir.HelperFunctions.Game_Enemy_applySetupLevelFluctuation = Game_Enemy.prototype.applySetupLevelFluctuation;
+  Game_Enemy.prototype.applySetupLevelFluctuation = function() {
+    Fenrir.HelperFunctions.Game_Enemy_applySetupLevelFluctuation.call(this);
+    var min = $gameVariables.value(Fenrir.HelperFunctions.Levels.minLevelVar);
+    var max = $gameVariables.value(Fenrir.HelperFunctions.Levels.maxLevelVar);
+    if(min > 0) this._level = Math.max(min, this._level);
+    if(max > 0) this._level = Math.min(max, this._level);
+  }
+}
+
+/**
+ * @class Game_Actor
+ */
+Game_Actor.prototype.getEquippedArmorTypes = function(slotId) {
+  var slots = this.equipSlots();
+  var equips = this.equips();
+  var result = [];
+  for(var a = 0;a < slots.length;a++) {
+    var slot = slots[a];
+    if(slot === slotId && equips[a] && equips[a].atypeId) result.push(equips[a].atypeId);
+  }
+  return result;
+}
+
+Game_Actor.prototype.getEquippedWeaponTypes = function() {
+ var slots = this.equipSlots();
+ var equips = this.equips();
+ var result = [];
+ for(var a = 0;a < slots.length;a++) {
+   var slot = slots[a];
+   if(slot === 1 && equips[a] && equips[a].wtypeId) result.push(equips[a].wtypeId);
+ }
+ return result;
+}
+
+Game_Unit.prototype.averageHpRate = function() {
+  var result = 0;
+  for(var a = 0;a < this.members().length;a++) {
+    var mem = this.members()[a];
+    result += mem.hpRate();
+  }
+  if(this.members().length > 0) return result / this.members().length;
+  return 0;
+}

@@ -1,8 +1,8 @@
 [
 null,
-{"id":1,"battlerName":"pc-ashly","characterIndex":0,"characterName":"pc-ashly","classId":3,"equips":[31,0,0,1,0],"faceIndex":0,"faceName":"pc-ashly","traits":[],"initialLevel":1,"maxLevel":99,"name":"Ashly","nickname":"","note":"","profile":""},
-{"id":2,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"","nickname":"","note":"","profile":""},
-{"id":3,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"","nickname":"","note":"","profile":""},
-{"id":4,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"","nickname":"","note":"","profile":""},
-{"id":5,"battlerName":"","characterIndex":0,"characterName":"","classId":1,"equips":[0,0,0,0,0],"faceIndex":0,"faceName":"","traits":[],"initialLevel":1,"maxLevel":99,"name":"","nickname":"","note":"","profile":""}
+{"id":1,"battlerName":"pc-nero","characterIndex":0,"characterName":"pc-nero","classId":1,"equips":[2,3,0,2,9],"faceIndex":0,"faceName":"pc-nero","traits":[],"initialLevel":1,"maxLevel":50,"name":"Nero","nickname":"","note":"<Default Row: 1>","profile":""},
+{"id":2,"battlerName":"pc-ashly","characterIndex":0,"characterName":"pc-ashly","classId":2,"equips":[1,0,0,1,8],"faceIndex":0,"faceName":"pc-ashly","traits":[],"initialLevel":1,"maxLevel":50,"name":"Ashly","nickname":"","note":"<Default Row: 3>","profile":""},
+{"id":3,"battlerName":"pc-iris","characterIndex":0,"characterName":"pc-iris","classId":3,"equips":[11,11,0,1,0,null,null,null,23],"faceIndex":0,"faceName":"pc-iris","traits":[],"initialLevel":1,"maxLevel":50,"name":"Iris","nickname":"","note":"<Default Row: 2>","profile":""},
+{"id":4,"battlerName":"pc-celdor","characterIndex":0,"characterName":"pc-celdor","classId":4,"equips":[36,0,0,15,7],"faceIndex":0,"faceName":"pc-celdor","traits":[],"initialLevel":1,"maxLevel":50,"name":"Celdor","nickname":"","note":"<Default Row: 5>","profile":""},
+{"id":5,"battlerName":"pc-sara","characterIndex":0,"characterName":"pc-sara","classId":5,"equips":[3,6,0,5,0],"faceIndex":0,"faceName":"pc-sara","traits":[],"initialLevel":2,"maxLevel":99,"name":"Sara","nickname":"","note":"<Default Row: 5>","profile":""}
 ]

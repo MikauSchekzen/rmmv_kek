@@ -48,88 +48,145 @@ Game_Map.prototype.checkPassage = function(x, y, bit) {
 }
 
 Tilemap.prototype._paintTiles = function(startX, startY, x, y) {
-   var tableEdgeVirtualId = 10000;
-   var mx                 = startX + x;
-   var my                 = startY + y;
-   var dx                 = (mx * this._tileWidth).mod(this._layerWidth);
-   var dy                 = (my * this._tileHeight).mod(this._layerHeight);
-   var lx                 = dx / this._tileWidth;
-   var ly                 = dy / this._tileHeight;
-   var tileId0            = this._readMapData(mx, my, 0);
-   var tileId1            = this._readMapData(mx, my, 1);
-   var tileId2            = this._readMapData(mx, my, 2);
-   var tileId3            = this._readMapData(mx, my, 3);
-   var shadowBits         = this._readMapData(mx, my, 4);
-   var upperTileId1       = this._readMapData(mx, my - 1, 1);
-   var lowerTiles         = [];
-   var upperTiles         = [];
+    var tableEdgeVirtualId = 10000;
+    var mx = startX + x;
+    var my = startY + y;
+    var dx = (mx * this._tileWidth).mod(this._layerWidth);
+    var dy = (my * this._tileHeight).mod(this._layerHeight);
+    var lx = dx / this._tileWidth;
+    var ly = dy / this._tileHeight;
+    var tileId0 = this._readMapData(mx, my, 0);
+    var tileId1 = this._readMapData(mx, my, 1);
+    var tileId2 = this._readMapData(mx, my, 2);
+    var tileId3 = this._readMapData(mx, my, 3);
+    var shadowBits = this._readMapData(mx, my, 4);
+    var upperTileId1 = this._readMapData(mx, my - 1, 1);
+    var lowerTiles = [];
+    var upperTiles = [];
 
-   if (this._isHigherTile(tileId0) || this.isHigherTile2(tileId0, mx, my)) {
-       upperTiles.push(tileId0);
-   } else {
-       lowerTiles.push(tileId0);
-   }
-   if (this._isHigherTile(tileId1) || this.isHigherTile2(tileId1, mx, my)) {
-       upperTiles.push(tileId1);
-   } else {
-       lowerTiles.push(tileId1);
-   }
+    if (this._isHigherTile(tileId0) || this._isHigherTile2(tileId0, mx, my)) {
+        upperTiles.push(tileId0);
+    } else {
+        lowerTiles.push(tileId0);
+    }
+    if (this._isHigherTile(tileId1) || this._isHigherTile2(tileId1, mx, my)) {
+        upperTiles.push(tileId1);
+    } else {
+        lowerTiles.push(tileId1);
+    }
 
-   lowerTiles.push(-shadowBits);
+    lowerTiles.push(-shadowBits);
 
-   if (this._isTableTile(upperTileId1) && !this._isTableTile(tileId1)) {
-       if (!Tilemap.isShadowingTile(tileId0)) {
-           lowerTiles.push(tableEdgeVirtualId + upperTileId1);
-       }
-   }
+    if (this._isTableTile(upperTileId1) && !this._isTableTile(tileId1)) {
+        if (!Tilemap.isShadowingTile(tileId0)) {
+            lowerTiles.push(tableEdgeVirtualId + upperTileId1);
+        }
+    }
 
-   if (this._isOverpassPosition(mx, my)) {
-       upperTiles.push(tileId2);
-       upperTiles.push(tileId3);
-   } else {
-       if (this._isHigherTile(tileId2) || this.isHigherTile2(tileId2, mx, my)) {
-           upperTiles.push(tileId2);
-       } else {
-           lowerTiles.push(tileId2);
-       }
-       if (this._isHigherTile(tileId3) || this.isHigherTile2(tileId3, mx, my)) {
-           upperTiles.push(tileId3);
-       } else {
-           lowerTiles.push(tileId3);
-       }
-   }
+    if (this._isOverpassPosition(mx, my)) {
+        upperTiles.push(tileId2);
+        upperTiles.push(tileId3);
+    } else {
+        if (this._isHigherTile(tileId2) || this._isHigherTile2(tileId2, mx, my)) {
+            upperTiles.push(tileId2);
+        } else {
+            lowerTiles.push(tileId2);
+        }
+        if (this._isHigherTile(tileId3) || this._isHigherTile2(tileId3, mx, my)) {
+            upperTiles.push(tileId3);
+        } else {
+            lowerTiles.push(tileId3);
+        }
+    }
 
-   var count = 1000 + this.animationCount - my;
-   var frameUpdated = (count % 30 === 0);
-   this._animationFrame = Math.floor(count / 30);
+    var lastLowerTiles = this._readLastTiles(0, lx, ly);
+    if (!lowerTiles.equals(lastLowerTiles) ||
+            (Tilemap.isTileA1(tileId0) && this._frameUpdated)) {
+        this._lowerBitmap.clearRect(dx, dy, this._tileWidth, this._tileHeight);
+        for (var i = 0; i < lowerTiles.length; i++) {
+            var lowerTileId = lowerTiles[i];
+            if (lowerTileId < 0) {
+                this._drawShadow(this._lowerBitmap, shadowBits, dx, dy);
+            } else if (lowerTileId >= tableEdgeVirtualId) {
+                this._drawTableEdge(this._lowerBitmap, upperTileId1, dx, dy);
+            } else {
+                this._drawTile(this._lowerBitmap, lowerTileId, dx, dy);
+            }
+        }
+        this._writeLastTiles(0, lx, ly, lowerTiles);
+    }
 
-   var lastLowerTiles = this._readLastTiles(0, lx, ly);
-   if (!lowerTiles.equals(lastLowerTiles) ||
-           (Tilemap.isTileA1(tileId0) && frameUpdated)) {
-       this._lowerBitmap.clearRect(dx, dy, this._tileWidth, this._tileHeight);
-       for (var i = 0; i < lowerTiles.length; i++) {
-           var lowerTileId = lowerTiles[i];
-           if (lowerTileId < 0) {
-               this._drawShadow(this._lowerBitmap, shadowBits, dx, dy);
-           } else if (lowerTileId >= tableEdgeVirtualId) {
-               this._drawTableEdge(this._lowerBitmap, upperTileId1, dx, dy);
-           } else {
-               this._drawTile(this._lowerBitmap, lowerTileId, dx, dy);
-           }
-       }
-       this._writeLastTiles(0, lx, ly, lowerTiles);
-   }
-
-   var lastUpperTiles = this._readLastTiles(1, lx, ly);
-   if (!upperTiles.equals(lastUpperTiles)) {
-       this._upperBitmap.clearRect(dx, dy, this._tileWidth, this._tileHeight);
-       for (var j = 0; j < upperTiles.length; j++) {
-           this._drawTile(this._upperBitmap, upperTiles[j], dx, dy);
-       }
-       this._writeLastTiles(1, lx, ly, upperTiles);
-   }
+    var lastUpperTiles = this._readLastTiles(1, lx, ly);
+    if (!upperTiles.equals(lastUpperTiles)) {
+        this._upperBitmap.clearRect(dx, dy, this._tileWidth, this._tileHeight);
+        for (var j = 0; j < upperTiles.length; j++) {
+            this._drawTile(this._upperBitmap, upperTiles[j], dx, dy);
+        }
+        this._writeLastTiles(1, lx, ly, upperTiles);
+    }
 }
 
-Tilemap.prototype.isHigherTile2 = function(tileId, x, y) {
+Tilemap.prototype._isHigherTile2 = function(tileId, x, y) {
+  return ($gameMap && ($gameMap.regionId(x, y) === FK.BWalls.overRegionNoPass || $gameMap.regionId(x, y) === FK.BWalls.overRegionPass));
+}
+
+
+/**
+ * @method _paintTiles
+ * @param {Number} startX
+ * @param {Number} startY
+ * @param {Number} x
+ * @param {Number} y
+ * @private
+ */
+ShaderTilemap.prototype._paintTiles = function(startX, startY, x, y) {
+    var mx = startX + x;
+    var my = startY + y;
+    var dx = x * this._tileWidth, dy = y * this._tileHeight;
+    var tileId0 = this._readMapData(mx, my, 0);
+    var tileId1 = this._readMapData(mx, my, 1);
+    var tileId2 = this._readMapData(mx, my, 2);
+    var tileId3 = this._readMapData(mx, my, 3);
+    var shadowBits = this._readMapData(mx, my, 4);
+    var upperTileId1 = this._readMapData(mx, my - 1, 1);
+    var lowerLayer = this.lowerLayer.children[0];
+    var upperLayer = this.upperLayer.children[0];
+
+    if (this._isHigherTile(tileId0) || this._isHigherTile2(tileId0, mx, my)) {
+        this._drawTile(upperLayer, tileId0, dx, dy);
+    } else {
+        this._drawTile(lowerLayer, tileId0, dx, dy);
+    }
+    if (this._isHigherTile(tileId1) || this._isHigherTile2(tileId1, mx, my)) {
+        this._drawTile(upperLayer, tileId1, dx, dy);
+    } else {
+        this._drawTile(lowerLayer, tileId1, dx, dy);
+    }
+
+    this._drawShadow(lowerLayer, shadowBits, dx, dy);
+    if (this._isTableTile(upperTileId1) && !this._isTableTile(tileId1)) {
+        if (!Tilemap.isShadowingTile(tileId0)) {
+            this._drawTableEdge(lowerLayer, upperTileId1, dx, dy);
+        }
+    }
+
+    if (this._isOverpassPosition(mx, my)) {
+        this._drawTile(upperLayer, tileId2, dx, dy);
+        this._drawTile(upperLayer, tileId3, dx, dy);
+    } else {
+        if (this._isHigherTile(tileId2) || this._isHigherTile2(tileId2, mx, my)) {
+            this._drawTile(upperLayer, tileId2, dx, dy);
+        } else {
+            this._drawTile(lowerLayer, tileId2, dx, dy);
+        }
+        if (this._isHigherTile(tileId3) || this._isHigherTile2(tileId3, mx, my)) {
+            this._drawTile(upperLayer, tileId3, dx, dy);
+        } else {
+            this._drawTile(lowerLayer, tileId3, dx, dy);
+        }
+    }
+}
+
+ShaderTilemap.prototype._isHigherTile2 = function(tileId, x, y) {
   return ($gameMap && ($gameMap.regionId(x, y) === FK.BWalls.overRegionNoPass || $gameMap.regionId(x, y) === FK.BWalls.overRegionPass));
 }

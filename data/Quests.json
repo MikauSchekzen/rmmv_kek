@@ -1,0 +1,97 @@
+{
+  "quests": [
+    {
+      "name": "Preparing for Disaster",
+      "id": 1,
+      "icon": 131,
+      "type": "main",
+      "description": "Get professor Byros from\nhis tent, and meet up\nwith Arthur."
+    },
+    {
+      "name": "Relic Hunt",
+      "id": 2,
+      "icon": 213,
+      "type": "main",
+      "description": "Find something of value\nin the Icralar Ruins."
+    },
+    {
+      "name": "Vendetta",
+      "id": 3,
+      "icon": 77,
+      "type": "main",
+      "description": "Pursue Darren."
+    },
+    {
+      "name": "Goblin Menace",
+      "id": 4,
+      "icon": 78,
+      "type": "main",
+      "description": "Goblins are raiding Vintara.\nDrive them off.",
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 25
+        }
+      ]
+    },
+    {
+      "name": "Quinn's Goods",
+      "id": 5,
+      "icon": 210,
+      "type": "main",
+      "description": "Get Quinn's goods back from\nthe goblins near Vintara.",
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 50
+        },
+        {
+          "type": "gold",
+          "value": 50
+        },
+        {
+          "type": "item",
+          "id": 1,
+          "value": 1
+        },
+        {
+          "type": "item",
+          "id": 2,
+          "value": 1
+        },
+        {
+          "type": "item",
+          "id": 4,
+          "value": 1
+        }
+      ]
+    },
+    {
+      "name": "Meow",
+      "id": 4,
+      "icon": 77,
+      "type": "main",
+      "description": "Pursue Darren.",
+      "rewards": [
+        {
+          "type": "exp",
+          "value": 50
+        }
+      ]
+    }
+  ],
+  "types": {
+    "main": {
+      "name": "Main",
+      "icon": 79
+    },
+    "side": {
+      "name": "Side",
+      "icon": 82
+    },
+    "ally": {
+      "name": "Companion",
+      "icon": 84
+    }
+  }
+}
