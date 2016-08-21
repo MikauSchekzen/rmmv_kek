@@ -1,0 +1,141 @@
+var FK = FK || {};
+FK.YEP_AI_Addon = FK.YEP_AI_Addon || {};
+
+var Imported = Imported || {};
+Imported.FK_YEP_AI_Addon = true;
+
+/*:
+ * @author FenrirKnight
+ * @plugindesc v0.2
+ *
+ * @help
+ * Adds more things to Yanfly's AI Plugin to control the AI of your enemies.
+ *
+ * =====================================
+ * New Conditions
+ * =====================================
+ *
+ * The following is a list of ways you can format your conditions for the enemy
+ * to choose the right skill. In addition to deciding whether or not the skill
+ * will be used, the condition also selects the enemy target. The following
+ * list will tell you how the conditions are met and what targets will be
+ * selected for battle.
+ *
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * EVALEXT eval
+ * - - - - - - - - - - - - - - - - - - -
+ * This allows you to use any kind of code to check and fulfill a condition.
+ * This condition uses all members of the skill's scope individually
+ * and allows the variable 'target'.
+ * - - - - - - - - - - - - - - - - - - -
+ * Example:  EvalExt target.hp >= 500: Skill 1, Highest HP%
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ *
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ * EVALEXT2 eval; eval2
+ * - - - - - - - - - - - - - - - - - - -
+ * This allows you to use any kind of code to check and fulfill a condition.
+ * Replace 'eval' with code that runs once, and 'eval2' for code that runs
+ * for each individual target as per EvalExt.
+ * - - - - - - - - - - - - - - - - - - -
+ * Example:  EvalExt2 Math.random() < 0.3; target.hp >= 500: Skill 1, Highest HP%
+ * =-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
+ *
+*/
+
+FK.YEP_AI_Addon.RegExp = {
+  delimiterOpen: /\<open\>/,
+  delimiterClose: /\<\/open\>/,
+  delimiterQuery: /\((.*?)\)/g,
+  operators: /(&&|AND|\|\||OR)/g
+};
+FK.YEP_AI_Addon.RegExp.delimiter = new RegExp("((?:" + FK.YEP_AI_Addon.RegExp.delimiterOpen.source + ")|(?:" + FK.YEP_AI_Addon.RegExp.delimiterClose.source + "))");
+
+
+FK.YEP_AI_Addon.AIManager_passAIConditions = AIManager.passAIConditions;
+AIManager.passAIConditions = function(line) {
+  // var arr = [["Always", "and", "Random 50%"], "or", "Party Alive Members > 2"];
+  var obj = this._createConditionArray("<open><open>Meow and Grunsk or Woof</open></open>");
+  console.log("=======");
+  // console.log(arr);
+  // var result = this._examineConditionArray(arr, "whole");
+  var result = true;
+  return result;
+}
+
+AIManager._createConditionArray = function(line) {
+  var result = [];
+  // Search for delimiters
+  var arr = FK.YEP_AI_Addon.RegExp.delimiterOpen.exec(line);
+  // Delimiter open
+  if(arr !== null) {
+    // Create array
+    console.log(line);
+    var obj = this._createConditionArray(arr.input.slice(arr[0].length));
+    line = obj.line;
+    // Close delimiter
+    var arrClose = FK.YEP_AI_Addon.RegExp.delimiterClose.exec(line);
+    result.push(obj.result);
+  }
+    // // Delimiter close
+    // else if(arr[1].match(FK.YEP_AI_Addon.RegExp.delimiterClose)) {
+    //   // Add condition
+    //   if(arr.index > 0) {
+    //     var condStr = arr.input.slice(0, arr.index);
+    //   }
+    //   // Close delimiter
+    //   line = arr.input.slice(arr.index + arr[0].length);
+    //   return { result: result, line: line };
+    // }
+  return { result: result, line: line };
+}
+
+AIManager._examineConditionArray = function(arr, type) {
+  var results = [null];
+  for(var a = 0;a < arr.length;a++) {
+    var obj = arr[a];
+    // Object is string
+    if(typeof obj === "string") {
+      // Operator AND
+      if(obj === "&&" || obj.toUpperCase() === "AND" && results[results.length-1] === false) {
+        // If last result was false, skip next item
+        a++;
+      }
+      // Operator OR
+      else if(obj === "||" || obj.toUpperCase() === "OR") {
+        // Begin new result line
+        results.push(null);
+      }
+      // Otherwise, it should be a condition
+      else {
+        results[results.length-1] = FK.YEP_AI_Addon.AIManager_passAIConditions.call(this, obj);
+      }
+    }
+    // Object is array
+    else if(obj instanceof Array) {
+      results[results.length-1] = this._examineConditionArray(obj, type);
+    }
+  }
+  // Return result
+  return (results.indexOf(true) !== -1);
+}
+
+AIManager.conditionEvalExt = function(condition) {
+  var action = this.action();
+  var item = action.item();
+  var user = this.battler();
+  var s = $gameSwitches._data;
+  var v = $gameVariables._data;
+
+  var group = this.getActionGroup();
+  var finalGroup = [];
+  for(var a = 0;a < group.length;a++) {
+    var target = group[a];
+    if(eval(condition)) {
+      finalGroup.push(target);
+    }
+  }
+  if(finalGroup.length === 0) return false;
+  this.setProperTarget(finalGroup);
+  return true;
+}

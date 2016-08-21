@@ -11,7 +11,7 @@ Yanfly.Sel = Yanfly.Sel || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.07a (Requires YEP_BattleEngineCore & YEP_TargetCore.js)
+ * @plugindesc v1.08 (Requires YEP_BattleEngineCore & YEP_TargetCore.js)
  * Control what targets can and can't be selected for actions.
  * @author Yanfly Engine Plugins
  *
@@ -58,6 +58,54 @@ Yanfly.Sel = Yanfly.Sel || {};
  * @param All Allies
  * @desc Selection text for all allies.
  * @default All Allies
+ *
+ * @param ---Visual All Window Select---
+ * @default
+ *
+ * @param Enable Visual All
+ * @desc Enables a window the player can click to toggle between
+ * select all for allies/enemies. YES - true   NO - false
+ * @default true
+ *
+ * @param Visual Enemy X
+ * @desc X coordinate of the All Enemies window.
+ * This is a formula.
+ * @default 0
+ *
+ * @param Visual Enemy Y
+ * @desc Y coordinate of the All Enemies window.
+ * This is a formula.
+ * @default this.fittingHeight(2)
+ *
+ * @param Visual Enemy Width
+ * @desc Width of the All Enemies window.
+ * This is a formula.
+ * @default 240
+ *
+ * @param Visual Enemy Height
+ * @desc Width of the All Enemies window.
+ * This is a formula.
+ * @default this.fittingHeight(1)
+ *
+  * @param Visual Ally X
+ * @desc X coordinate of the All Allies window.
+ * This is a formula.
+ * @default Graphics.boxWidth - 240
+ *
+ * @param Visual Ally Y
+ * @desc Y coordinate of the All Allies window.
+ * This is a formula.
+ * @default this.fittingHeight(2)
+ *
+ * @param Visual Ally Width
+ * @desc Width of the All Allies window.
+ * This is a formula.
+ * @default 240
+ *
+ * @param Visual Ally Height
+ * @desc Width of the All Allies window.
+ * This is a formula.
+ * @default this.fittingHeight(1)
  *
  * @help
  * ============================================================================
@@ -333,6 +381,12 @@ Yanfly.Sel = Yanfly.Sel || {};
  * Changelog
  * ============================================================================
  *
+ * Version 1.08:
+ * - New Feature: Clicking upon the Party Status Window to select actors works.
+ * This requires Battle Engine Core v1.38 or else it will not work.
+ * - New Feature: Visual Enemy and Visual Ally select for touch input.
+ * This requires Battle Engine Core v1.38 or else it will not work.
+ *
  * Verison 1.07a:
  * - Fixed a bug that caused the all dead check to not check the actors that
  * were unselectable.
@@ -402,6 +456,21 @@ Yanfly.Param.SelectAllAllies = String(Yanfly.Parameters['All Allies']);
 
 Yanfly.Param.BECEnemySelect = true;
 Yanfly.Param.BECActorSelect = true;
+
+Yanfly.Param.SelectVisualAll = String(Yanfly.Parameters['Enable Visual All']);
+Yanfly.Param.SelectVisualAll = eval(Yanfly.Param.SelectVisualAll);
+Yanfly.Param.SelectVisualEnemy = {
+  x: String(Yanfly.Parameters['Visual Enemy X']),
+  y: String(Yanfly.Parameters['Visual Enemy Y']),
+  width: String(Yanfly.Parameters['Visual Enemy Width']),
+  height: String(Yanfly.Parameters['Visual Enemy Height'])
+}
+Yanfly.Param.SelectVisualAlly = {
+  x: String(Yanfly.Parameters['Visual Ally X']),
+  y: String(Yanfly.Parameters['Visual Ally Y']),
+  width: String(Yanfly.Parameters['Visual Ally Width']),
+  height: String(Yanfly.Parameters['Visual Ally Height'])
+}
 
 //=============================================================================
 // DataManager
@@ -1518,11 +1587,155 @@ Window_BattleEnemy.prototype.enemyIndex = function() {
 };
 
 //=============================================================================
+// Window_BattleStatus
+//=============================================================================
+
+Window_BattleStatus.prototype.setEnemySelectionWindow = function(win) {
+  this._enemySelectWindow = win;
+};
+
+Yanfly.Sel.Window_BattleStatus_update = Window_BattleStatus.prototype.update;
+Window_BattleStatus.prototype.update = function() {
+  Yanfly.Sel.Window_BattleStatus_update.call(this);
+  this.processInactiveSelectTouch();
+};
+
+Window_BattleStatus.prototype.processInactiveSelectTouch = function() {
+  if (!this._enemySelectWindow) return;
+  if (!this._enemySelectWindow.active) return;
+  if (TouchInput.isTriggered() && this.isTouchedInsideFrame()) {
+    this.onInactiveSelectTouch();
+  }
+};
+
+Window_BattleStatus.prototype.onInactiveSelectTouch = function() {
+  var lastIndex = this.index();
+  var x = this.canvasToLocalX(TouchInput.x);
+  var y = this.canvasToLocalY(TouchInput.y);
+  var hitIndex = this.hitTest(x, y);
+  if (hitIndex >= 0) {
+    var actor = $gameParty.battleMembers()[hitIndex];
+    var win = this._enemySelectWindow;
+    if (actor && win) {
+      var winIndex = win._enemies.indexOf(actor);
+      if (winIndex >= 0) {
+        if (winIndex !== win.index()) {
+          win.select(winIndex);
+          SoundManager.playCursor();
+        } else {
+          win.processOk();
+        }
+      }
+    }
+  }
+};
+
+//=============================================================================
+// Window_VisualSelectAll
+//=============================================================================
+
+function Window_VisualSelectAll() {
+    this.initialize.apply(this, arguments);
+}
+
+Window_VisualSelectAll.prototype = Object.create(Window_Base.prototype);
+Window_VisualSelectAll.prototype.constructor = Window_VisualSelectAll;
+
+Window_VisualSelectAll.prototype.initialize = function(actor) {
+  this._isActorSelect = actor;
+  if (this._isActorSelect) {
+    this._text = Yanfly.Param.SelectAllAllies;
+    var settings = Yanfly.Param.SelectVisualAlly;
+  } else {
+    this._text = Yanfly.Param.SelectAllFoes;
+    var settings = Yanfly.Param.SelectVisualEnemy;
+  }
+  var width = eval(settings.width);
+  var height = eval(settings.height);
+  var x = eval(settings.x);
+  var y = eval(settings.y);
+  Window_Base.prototype.initialize.call(this, x, y, width, height);
+  this.hide();
+  this.refresh();
+};
+
+Window_VisualSelectAll.prototype.refresh = function() {
+  this.contents.clear();
+  this.drawText(this._text, 0, 0, this.contents.width, 'center');
+};
+
+Window_VisualSelectAll.prototype.setEnemySelectionWindow = function(win) {
+  this._enemySelectWindow = win;
+};
+
+Window_VisualSelectAll.prototype.update = function() {
+  Window_Base.prototype.update.call(this);
+  this.updateVisible();
+  this.processMouseOver();
+  this.processTouch();
+};
+
+Window_VisualSelectAll.prototype.updateVisible = function() {
+  if (!this._enemySelectWindow) return this.visible = false;
+  if (!this._enemySelectWindow.active) return this.visible = false;
+  if (this._isActorSelect) {
+    var index = this._enemySelectWindow._enemies.indexOf('ALL ALLIES');
+  } else {
+    var index = this._enemySelectWindow._enemies.indexOf('ALL ENEMIES');
+  }
+  this.visible = index >= 0;
+};
+
+Window_VisualSelectAll.prototype.processMouseOver = function() {
+  if (!this.visible) return $gameTemp._disableMouseOverSelect = false;;
+  var x = this.canvasToLocalX(TouchInput._mouseOverX);
+  var y = this.canvasToLocalY(TouchInput._mouseOverY);
+  var inside = x >= 0 && y >= 0 && x < this.width && y < this.height;
+  if (inside) {
+    if (this._isActorSelect) {
+      var index = this._enemySelectWindow._enemies.indexOf('ALL ALLIES');
+    } else {
+      var index = this._enemySelectWindow._enemies.indexOf('ALL ENEMIES');
+    }
+    if (index !== this._enemySelectWindow.index()) SoundManager.playCursor();
+    this._enemySelectWindow.select(index);
+    $gameTemp._disableMouseOverSelect = true;
+  } else {
+    $gameTemp._disableMouseOverSelect = false;
+  }
+};
+
+Window_VisualSelectAll.prototype.processTouch = function() {
+  if (!this.visible) return;
+  if (!TouchInput.isTriggered()) return;
+  var x = this.canvasToLocalX(TouchInput._mouseOverX);
+  var y = this.canvasToLocalY(TouchInput._mouseOverY);
+  var inside = x >= 0 && y >= 0 && x < this.width && y < this.height;
+  if (inside) {
+    this._enemySelectWindow.processOk();
+  }
+};
+
+//=============================================================================
 // Scene_Battle
 //=============================================================================
 
 Scene_Battle.prototype.selectActorSelection = function() {
-    this.selectEnemySelection();
+  this.selectEnemySelection();
+};
+
+Yanfly.Sel.Scene_Battle_createEnemyWindow =
+  Scene_Battle.prototype.createEnemyWindow;
+Scene_Battle.prototype.createEnemyWindow = function() {
+  Yanfly.Sel.Scene_Battle_createEnemyWindow.call(this);
+  this._statusWindow.setEnemySelectionWindow(this._enemyWindow);
+  if (!Yanfly.Param.SelectVisualAll) return;
+  this._visualSelectAllyWindow = new Window_VisualSelectAll(true);
+  this._visualSelectAllyWindow.setEnemySelectionWindow(this._enemyWindow);
+  this.addChild(this._visualSelectAllyWindow);
+  this._visualSelectEnemyWindow = new Window_VisualSelectAll(false);
+  this._visualSelectEnemyWindow.setEnemySelectionWindow(this._enemyWindow);
+  this.addChild(this._visualSelectEnemyWindow);
 };
 
 //=============================================================================

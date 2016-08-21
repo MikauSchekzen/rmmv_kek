@@ -11,7 +11,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.09 (Requires YEP_BattleEngineCore.js) Visual functions
+ * @plugindesc v1.10 (Requires YEP_BattleEngineCore.js) Visual functions
  * are added to the Battle Engine Core's action sequences.
  * @author Yanfly Engine Plugins
  *
@@ -241,6 +241,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  * target's height. The frames determine how many frames it will take for the
  * target to reach that height. Using 0% for the height will bring the target
  * back to the ground.
+ * Note: Floating only works with Sideview.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Usage Example: float user: 200%
  *                float enemies: 500, 30
@@ -266,6 +267,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  * than a percentage of the target's height. The frame count is how long the
  * target will be in the air. You can use this with the 'Move' action sequence
  * to make the target appear like it is jumping a distance.
+ * Note: Jumping only works with Sideview.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Usage Example: jump user: 150%
  *                jump target: 300, 60
@@ -329,6 +331,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  * action sequence command will move target1 to any of those locations listed
  * in the arguments. If it's towards target2, you must include what location
  * relative to target2 for target1 to travel to.
+ * Note: Moving only works with Sideview.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Usage Example: move user: home, 20
  *                move target: forward, 48, 12
@@ -398,6 +401,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Waits for all battler float changes to finish before going on to the next
  * action in the action sequence.
+ * Note: Floating only works with Sideview.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Usage Example: wait for float
  *=============================================================================
@@ -407,6 +411,7 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Waits for all battler jumps to finish before going on to the next action
  * in the action sequence.
+ * Note: Jumping only works with Sideview.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Usage Example: wait for jump
  *=============================================================================
@@ -423,6 +428,12 @@ Yanfly.ASP2 = Yanfly.ASP2 || {};
  * ============================================================================
  * Changelog
  * ============================================================================
+ *
+ * Version 1.10a:
+ * - Fixed a bug that caused scaled enemies to have their state icons and
+ * overlays appear in odd places.
+ * - Documentation update for Move, Float, and Jump related action sequences as
+ * they only work in Sideview.
  *
  * Version 1.09:
  * - Animations played on a floating or jumping battlers 'Feet' location will
@@ -1126,11 +1137,15 @@ Sprite_Battler.prototype.updateFloat = function() {
 };
 
 Sprite_Battler.prototype.updateStateSprites = function() {
-    var height = this._battler.spriteHeight() * -1;
-    height -= Sprite_StateIcon._iconHeight;
-    if (this._stateIconSprite) this._stateIconSprite.y = height;
+    if (this._stateIconSprite) {
+      var height = this._battler.spriteHeight() * -1;
+      height -= Sprite_StateIcon._iconHeight;
+      height /= this.scale.y;
+      this._stateIconSprite.y = height;
+    }
     if (this._stateSprite) {
-      this._stateSprite.y = (this._battler.spriteHeight() - 64) * -1;
+      var height = (this._battler.spriteHeight() - 64 * this.scale.y) * -1;
+      this._stateSprite.y = height;
     }
     var heightRate = 0;
     heightRate += this.getFloatHeight();

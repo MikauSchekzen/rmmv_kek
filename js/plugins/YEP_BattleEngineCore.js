@@ -11,7 +11,7 @@ Yanfly.BEC = Yanfly.BEC || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.36d Have more control over the flow of the battle system
+ * @plugindesc v1.38 Have more control over the flow of the battle system
  * with this plugin and alter various aspects to your liking.
  * @author Yanfly Engine Plugins
  *
@@ -647,6 +647,14 @@ Yanfly.BEC = Yanfly.BEC || {};
  * ============================================================================
  * Changelog
  * ============================================================================
+ *
+ * Version 1.38:
+ * - Optimization update.
+ * - Compatibility update for Selection Control v1.08.
+ *
+ * Version 1.37:
+ * - Fixed a bug where if the enemy's size is too small, the enemy's name
+ * during selection will be cut off.
  *
  * Version 1.36d:
  * - Made an update for the battle background image snaps when there is no
@@ -3271,6 +3279,7 @@ Game_BattlerBase.prototype.paySkillCost = function(skill) {
 Yanfly.BEC.Game_Battler_useItem = Game_Battler.prototype.useItem;
 Game_Battler.prototype.useItem = function(item) {
     Yanfly.BEC.Game_Battler_useItem.call(this, item);
+    this.refresh();
     if (!$gameParty.inBattle()) return;
     this.increaseSelfTurnCount();
     this.updateStateActionStart();
@@ -3985,6 +3994,17 @@ Game_Actor.prototype.performEscapeSuccess = function() {
 // Game_Enemy
 //=============================================================================
 
+if (!Game_Enemy.prototype.skills) {
+Game_Enemy.prototype.skills = function() {
+  var skills = []
+  for (var i = 0; i < this.enemy().actions.length; ++i) {
+    var skill = $dataSkills[this.enemy().actions[i].skillId]
+    if (skill) skills.push(skill);
+  }
+  return skills;
+}
+}; // (!Game_Enemy.prototype.skills)
+
 Game_Enemy.prototype.performActionStart = function(action) {
     Game_Battler.prototype.performActionStart.call(this, action);
     if (!$gameSystem.isSideView() || !this.spriteCanMove()) {
@@ -4290,6 +4310,7 @@ Window_Help.prototype.clear = function() {
 Window_Help.prototype.setBattler = function(battler) {
     this.contents.clear();
     this.clear();
+    this.resetFontSettings();
     if (!$gameParty.inBattle()) return;
     if (!battler) return;
     var action = BattleManager.inputtingAction();
@@ -4434,6 +4455,7 @@ Window_BattleActor.prototype.isClickedActor = function(actor) {
     if (!actor) return false;
     if (!actor.isSpriteVisible()) return false;
     if (!actor.isAppeared()) return false;
+    if ($gameTemp._disableMouseOverSelect) return false;
     var x = TouchInput.x;
     var y = TouchInput.y;
     var rect = new Rectangle();
@@ -4462,6 +4484,7 @@ Window_BattleActor.prototype.isMouseOverActor = function(actor) {
     if (!actor) return false;
     if (!actor.isSpriteVisible()) return false;
     if (!actor.isAppeared()) return false;
+    if ($gameTemp._disableMouseOverSelect) return false;
     var x = TouchInput._mouseOverX;
     var y = TouchInput._mouseOverY;
     var rect = new Rectangle();
@@ -4590,6 +4613,7 @@ Window_BattleEnemy.prototype.getClickedEnemy = function() {
 Window_BattleEnemy.prototype.isClickedEnemy = function(enemy) {
     if (!enemy) return false;
     if (!enemy.isSpriteVisible()) return false;
+    if ($gameTemp._disableMouseOverSelect) return false;
     var x = TouchInput.x;
     var y = TouchInput.y;
     var rect = new Rectangle();
@@ -4618,6 +4642,7 @@ Window_BattleEnemy.prototype.getMouseOverEnemy = function() {
 Window_BattleEnemy.prototype.isMouseOverEnemy = function(enemy) {
     if (!enemy) return false;
     if (!enemy.isSpriteVisible()) return false;
+    if ($gameTemp._disableMouseOverSelect) return false;
     var x = TouchInput._mouseOverX;
     var y = TouchInput._mouseOverY;
     var rect = new Rectangle();
@@ -4685,6 +4710,7 @@ Window_EnemyVisualSelect.prototype.updateWindowSize = function() {
     textWidth += this.textPadding() * 2;
     var width = Math.max(spriteWidth, textWidth) + this.standardPadding() * 2;
     var height = this._battler.spriteHeight() + this.standardPadding() * 2;
+    height = Math.max(height, this.lineHeight() + this.standardPadding() * 2);
     if (width === this.width && height === this.height) return;
     this.width = width;
     this.height = height;
@@ -4815,6 +4841,10 @@ Window_BattleStatus.prototype.processStatusRefresh = function(index) {
     this.contents.clearRect(rect.x, rect.y, rect.width, rect.height);
     this.drawItem(index);
     actor.completetStatusRefreshRequest();
+};
+
+Window_BattleStatus.prototype.update = function() {
+    Window_Selectable.prototype.update.call(this);
 };
 
 if (!Yanfly.Param.BECCurMax) {

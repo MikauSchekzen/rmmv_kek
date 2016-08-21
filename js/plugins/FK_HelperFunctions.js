@@ -403,6 +403,7 @@ if(Imported.YEP_EnemyLevels) {
   }
 }
 
+
 /**
  * @class Game_Actor
  */
@@ -428,6 +429,10 @@ Game_Actor.prototype.getEquippedWeaponTypes = function() {
  return result;
 }
 
+
+/**
+ * @class Game_Unit
+ */
 Game_Unit.prototype.averageHpRate = function() {
   var result = 0;
   for(var a = 0;a < this.members().length;a++) {
@@ -436,4 +441,20 @@ Game_Unit.prototype.averageHpRate = function() {
   }
   if(this.members().length > 0) return result / this.members().length;
   return 0;
+}
+
+
+/**
+ * @class BattleManager
+ */
+BattleManager.doDamage = function(battler, damage, variance) {
+  if(variance === undefined) variance = 0;
+  var amp = Math.floor(Math.max(Math.abs(damage) * variance / 100, 0));
+  var v = Math.randomInt(amp + 1) + Math.randomInt(amp + 1) - amp;
+  var value = damage >= 0 ? damage + v : damage - v;
+  battler.gainHp(-value);
+  if (battler.isDead()) {
+      battler.performCollapse();
+  }
+  BattleManager.checkBattleEnd();
 }

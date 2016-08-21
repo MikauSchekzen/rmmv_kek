@@ -11,7 +11,7 @@ Yanfly.CoreAI = Yanfly.CoreAI || {};
 
 //=============================================================================
  /*:
- * @plugindesc v1.07 This plugin allows you to structure battle A.I.
+ * @plugindesc v1.08 This plugin allows you to structure battle A.I.
  * patterns with more control.
  * @author Yanfly Engine Plugins
  *
@@ -147,10 +147,10 @@ Yanfly.CoreAI = Yanfly.CoreAI || {};
  * This allows you to match the element rate of element X (use either a number
  * or the name of the element in place of 'X') to see whether or not the
  * conditions for the action are fulfilled. Replace 'case' with 'Neutral' for
- * normal element rate, 'Weakness' for anything above 100% element rate,
- * 'Resistant' for below 100% element rate, 'Null' for 0% element rate, and
- * 'Absorb' for below 0% element rate. Valid targets will be those with the
- * matching element rates.
+ * normal element rate (under 110% and above 90%), 'Weakness' for anything
+ * above 100% element rate, 'Resistant' for below 100% element rate, 'Null' for
+ * 0% element rate, and 'Absorb' for below 0% element rate. Valid targets will
+ * be those with the matching element rates.
  *- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
  * Example:   Element Fire Weakness: Fireball, Lowest HP%
  *            Element Water Resistant: Water Cancel, Highest MAT
@@ -372,6 +372,11 @@ Yanfly.CoreAI = Yanfly.CoreAI || {};
  * Changelog
  * ============================================================================
  *
+ * Version 1.08:
+ * - Optimization update.
+ * - Neutral elemental resistance is now considered to be above 90% and under
+ * 110% for a better range of activation.
+ *
  * Version 1.07:
  * - Fixed a compatibility bug that caused certain conditions to bypass taunts.
  *
@@ -498,8 +503,10 @@ if (eval(Yanfly.Param.CoreAIDynamic)) {
   Yanfly.CoreAI.BattleManager_getNextSubject =
       BattleManager.getNextSubject;
   BattleManager.getNextSubject = function() {
-    this.updateAIPatterns();
-    return Yanfly.CoreAI.BattleManager_getNextSubject.call(this);
+    //this.updateAIPatterns();
+    var battler = Yanfly.CoreAI.BattleManager_getNextSubject.call(this);
+    if (battler && battler.isEnemy()) battler.setAIPattern();
+    return battler;
   };
 };
 
@@ -1083,10 +1090,11 @@ AIManager.elementRateMatch = function(target, elementId, type) {
       if (!$gameTroop.aiElementRateKnown(target, elementId)) return true;
     }
     if (['NEUTRAL', 'NORMAL'].contains(type)) {
-      return rate === 1.00;
+      return rate >= 0.90 && rate <= 1.10;
     } else if (['WEAK', 'WEAKNESS', 'VULNERABLE'].contains(type)) {
       return rate > 1.00;
     } else if (['RESIST', 'RESISTANT', 'STRONG'].contains(type)) {
+      console.log(rate);
       return rate < 1.00;
     } else if (['NULL', 'CANCEL', 'NO EFFECT'].contains(type)) {
       return rate === 0.00;
